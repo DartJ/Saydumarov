@@ -1,0 +1,6 @@
+{
+  "name": "ARCADE — Игровая платформа",
+  "description": "Игровой браузерный портал без регистрации: шахматы, сапёр, бильярд, шашки, крестики-нолики и онлайн-комнаты на базе Supabase.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

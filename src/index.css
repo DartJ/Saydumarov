@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-display: 'Unbounded', system-ui, -apple-system, sans-serif;
+    --font-sans: 'Manrope', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  }
+
+  html,
+  body {
+    font-family: var(--font-sans);
+    background-color: #090b10;
+    color: #f1f5f9;
+    overflow-x: hidden;
+  }
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-mono-num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes cellPop {
+  0% {
+    transform: scale(0.84);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes mineShake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+
+.animate-cell-pop {
+  animation: cellPop 140ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-mine-shake {
+  animation: mineShake 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-cell-pop,
+  .animate-mine-shake {
+    animation: none;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0d1117;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #232b3a;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #334057;
+}
