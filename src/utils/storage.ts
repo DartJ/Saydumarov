@@ -28,6 +28,7 @@ export const DEFAULT_RECORDS: GameRecords = {
   tictactoe: { played: 0, wins: 0, draws: 0 },
   cityDriver: { totalCashEarned: 0, missionsCompleted: 0, maxWantedStars: 0 },
   tacticalFps: { kills: 0, deaths: 0, headshots: 0, roundsWon: 0 },
+  colorBlock: { bestScore: 0, totalLinesCleared: 0, bestCombo: 0 },
 };
 
 function safeGetItem(key: string): string | null {
@@ -84,6 +85,7 @@ export function loadRecords(): GameRecords {
       tictactoe: { ...DEFAULT_RECORDS.tictactoe, ...parsed.tictactoe },
       cityDriver: { ...DEFAULT_RECORDS.cityDriver, ...parsed.cityDriver },
       tacticalFps: { ...DEFAULT_RECORDS.tacticalFps, ...parsed.tacticalFps },
+      colorBlock: { ...DEFAULT_RECORDS.colorBlock, ...parsed.colorBlock },
     };
   } catch {
     return DEFAULT_RECORDS;

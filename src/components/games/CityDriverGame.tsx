@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import {
-  BuildingBox,
   CITY_HALF_SIZE,
   MissionState,
+  MissionType,
   PedestrianState,
   ROAD_WIDTH,
   VehicleKind,
@@ -55,8 +55,100 @@ const VEHICLE_NAMES: Record<VehicleKind, string> = {
   muscle: 'Dominator V8',
   taxi: 'City Cab',
   sedan: 'Premier Sedan',
+  suv: 'Patriot 4x4',
   police: 'LSPD Interceptor',
 };
+
+function makeLowerBodyGeometry(kind: VehicleKind): THREE.ExtrudeGeometry {
+  const shape = new THREE.Shape();
+  if (kind === 'suv') {
+    shape.moveTo(-2.14, 0.34);
+    shape.lineTo(2.14, 0.34);
+    shape.lineTo(2.16, 0.84);
+    shape.lineTo(1.16, 0.96);
+    shape.lineTo(-1.95, 0.98);
+    shape.lineTo(-2.14, 0.82);
+    shape.lineTo(-2.14, 0.34);
+  } else if (kind === 'sport') {
+    shape.moveTo(-2.16, 0.28);
+    shape.lineTo(2.22, 0.28);
+    shape.lineTo(2.14, 0.62);
+    shape.lineTo(1.06, 0.80);
+    shape.lineTo(-1.82, 0.86);
+    shape.lineTo(-2.16, 0.72);
+    shape.lineTo(-2.16, 0.28);
+  } else {
+    shape.moveTo(-2.14, 0.30);
+    shape.lineTo(2.16, 0.30);
+    shape.lineTo(2.12, 0.68);
+    shape.lineTo(1.10, 0.84);
+    shape.lineTo(-1.88, 0.88);
+    shape.lineTo(-2.14, 0.72);
+    shape.lineTo(-2.14, 0.30);
+  }
+
+  const width = kind === 'suv' ? 1.92 : 1.88;
+  const geom = new THREE.ExtrudeGeometry(shape, {
+    depth: width,
+    bevelEnabled: true,
+    bevelThickness: 0.09,
+    bevelSize: 0.06,
+    bevelSegments: 2,
+  });
+  geom.rotateY(-Math.PI / 2);
+  geom.translate(width / 2, 0, 0);
+  geom.computeVertexNormals();
+  return geom;
+}
+
+function makeCabinGeometry(kind: VehicleKind): THREE.ExtrudeGeometry {
+  const shape = new THREE.Shape();
+  if (kind === 'suv') {
+    shape.moveTo(-1.92, 0.92);
+    shape.lineTo(1.12, 0.92);
+    shape.lineTo(0.64, 1.54);
+    shape.lineTo(-1.68, 1.54);
+    shape.lineTo(-1.92, 0.92);
+  } else if (kind === 'sport') {
+    shape.moveTo(-1.74, 0.78);
+    shape.lineTo(1.02, 0.76);
+    shape.lineTo(0.28, 1.24);
+    shape.lineTo(-0.96, 1.24);
+    shape.lineTo(-1.74, 0.78);
+  } else {
+    shape.moveTo(-1.78, 0.82);
+    shape.lineTo(1.04, 0.80);
+    shape.lineTo(0.42, 1.32);
+    shape.lineTo(-1.02, 1.32);
+    shape.lineTo(-1.78, 0.82);
+  }
+
+  const width = kind === 'suv' ? 1.54 : 1.34;
+  const geom = new THREE.ExtrudeGeometry(shape, {
+    depth: width,
+    bevelEnabled: true,
+    bevelThickness: 0.08,
+    bevelSize: 0.05,
+    bevelSegments: 2,
+  });
+  geom.rotateY(-Math.PI / 2);
+  geom.translate(width / 2, 0, 0);
+  geom.computeVertexNormals();
+  return geom;
+}
+
+const SCULPTED_CAR_GEOS: Partial<
+  Record<VehicleKind, { lower: THREE.ExtrudeGeometry; cabin: THREE.ExtrudeGeometry }>
+> = {};
+function getCarGeos(kind: VehicleKind) {
+  if (!SCULPTED_CAR_GEOS[kind]) {
+    SCULPTED_CAR_GEOS[kind] = {
+      lower: makeLowerBodyGeometry(kind),
+      cabin: makeCabinGeometry(kind),
+    };
+  }
+  return SCULPTED_CAR_GEOS[kind]!;
+}
 
 function buildVehicleMesh(
   v: VehicleState,
@@ -74,8 +166,7 @@ function buildVehicleMesh(
   const bodyTilt = new THREE.Group();
   group.add(bodyTilt);
 
-  // Soft radial ground shadow
-  const shadowGeo = new THREE.PlaneGeometry(3.1, 5.2);
+  const shadowGeo = new THREE.PlaneGeometry(3.2, 5.4);
   const shadowMat = new THREE.MeshBasicMaterial({
     map: shadowTex,
     transparent: true,
@@ -88,158 +179,176 @@ function buildVehicleMesh(
 
   const paintMat = new THREE.MeshStandardMaterial({
     color: v.color,
-    roughness: v.kind === 'sport' ? 0.28 : 0.36,
-    metalness: 0.45,
+    roughness: v.kind === 'sport' ? 0.25 : 0.34,
+    metalness: 0.52,
   });
   const darkTrimMat = new THREE.MeshStandardMaterial({
-    color: '#161a22',
+    color: '#141820',
     roughness: 0.72,
-    metalness: 0.2,
+    metalness: 0.22,
   });
   const glassMat = new THREE.MeshStandardMaterial({
-    color: '#0d1828',
-    roughness: 0.14,
-    metalness: 0.8,
+    color: '#0c1624',
+    roughness: 0.12,
+    metalness: 0.85,
   });
   const chromeMat = new THREE.MeshStandardMaterial({
-    color: '#cfd6e0',
-    roughness: 0.26,
-    metalness: 0.88,
+    color: '#d4dce6',
+    roughness: 0.24,
+    metalness: 0.9,
   });
 
-  // Lower chassis
-  const chassis = new THREE.Mesh(new THREE.BoxGeometry(1.94, 0.56, 4.28), paintMat);
-  chassis.position.y = 0.58;
-  chassis.castShadow = true;
-  chassis.receiveShadow = true;
-  bodyTilt.add(chassis);
+  // Sculpted streamlined chassis + narrower tapered cabin greenhouse
+  const geos = getCarGeos(v.kind);
+  const bodyMesh = new THREE.Mesh(geos.lower, paintMat);
+  bodyMesh.castShadow = true;
+  bodyMesh.receiveShadow = true;
+  bodyTilt.add(bodyMesh);
 
-  // Police white doors accent
+  const cabinMesh = new THREE.Mesh(geos.cabin, paintMat);
+  cabinMesh.castShadow = true;
+  cabinMesh.receiveShadow = true;
+  bodyTilt.add(cabinMesh);
+
+  // Sloped windshield, rear fastback glass & side windows sized to tapered cabin
+  const cabinW = v.kind === 'suv' ? 1.44 : 1.24;
+  const cabinH = v.kind === 'suv' ? 1.24 : 1.04;
+  const frontGlass = new THREE.Mesh(new THREE.BoxGeometry(cabinW, 0.34, 0.08), glassMat);
+  frontGlass.position.set(0, cabinH, 0.66);
+  frontGlass.rotation.x = -0.84;
+  bodyTilt.add(frontGlass);
+
+  const rearGlass = new THREE.Mesh(new THREE.BoxGeometry(cabinW * 0.96, 0.34, 0.08), glassMat);
+  rearGlass.position.set(0, cabinH - 0.02, -1.26);
+  rearGlass.rotation.x = 0.96;
+  bodyTilt.add(rearGlass);
+
+  const sideGlass = new THREE.Mesh(
+    new THREE.BoxGeometry(cabinW + 0.24, 0.26, 1.32),
+    glassMat
+  );
+  sideGlass.position.set(0, cabinH - 0.02, -0.25);
+  bodyTilt.add(sideGlass);
+
+  // Police white doors band
   if (v.isPolice) {
     const doorBand = new THREE.Mesh(
-      new THREE.BoxGeometry(1.98, 0.42, 1.85),
-      new THREE.MeshStandardMaterial({ color: '#f1f5f9', roughness: 0.32, metalness: 0.2 })
+      new THREE.BoxGeometry(2.04, 0.42, 1.65),
+      new THREE.MeshStandardMaterial({ color: '#f1f5f9', roughness: 0.3, metalness: 0.2 })
     );
-    doorBand.position.set(0, 0.58, 0.1);
+    doorBand.position.set(0, 0.54, -0.05);
     bodyTilt.add(doorBand);
   }
 
-  // Cabin greenhouse
-  const cabinLen = v.kind === 'sport' ? 2.05 : 2.35;
-  const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.66, 0.5, cabinLen), paintMat);
-  cabin.position.set(0, 1.06, -0.15);
-  cabin.castShadow = true;
-  bodyTilt.add(cabin);
+  // Side mirrors + lower front splitter + rear diffuser + dual chrome exhaust tips
+  for (const sx of [-1.02, 1.02]) {
+    const mirror = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.1, 0.14), darkTrimMat);
+    mirror.position.set(sx, 0.88, 0.56);
+    bodyTilt.add(mirror);
+  }
 
-  // Windshield & rear glass
-  const windshield = new THREE.Mesh(new THREE.BoxGeometry(1.52, 0.4, cabinLen + 0.08), glassMat);
-  windshield.position.set(0, 1.05, -0.15);
-  bodyTilt.add(windshield);
+  const frontSplitter = new THREE.Mesh(new THREE.BoxGeometry(1.94, 0.09, 0.24), darkTrimMat);
+  frontSplitter.position.set(0, 0.3, 2.18);
+  bodyTilt.add(frontSplitter);
 
-  // Side windows
-  const sideGlass = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.34, cabinLen - 0.35), glassMat);
-  sideGlass.position.set(0, 1.05, -0.15);
-  bodyTilt.add(sideGlass);
+  const rearDiffuser = new THREE.Mesh(new THREE.BoxGeometry(1.88, 0.16, 0.22), darkTrimMat);
+  rearDiffuser.position.set(0, 0.34, -2.14);
+  bodyTilt.add(rearDiffuser);
 
-  // Front & rear bumpers
-  const frontBumper = new THREE.Mesh(new THREE.BoxGeometry(1.98, 0.24, 0.22), darkTrimMat);
-  frontBumper.position.set(0, 0.36, 2.15);
-  bodyTilt.add(frontBumper);
+  for (const ex of [-0.58, 0.58]) {
+    const exhaust = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.18, 10), chromeMat);
+    exhaust.rotation.x = Math.PI / 2;
+    exhaust.position.set(ex, 0.34, -2.23);
+    bodyTilt.add(exhaust);
+  }
 
-  const rearBumper = new THREE.Mesh(new THREE.BoxGeometry(1.98, 0.24, 0.22), darkTrimMat);
-  rearBumper.position.set(0, 0.36, -2.15);
-  bodyTilt.add(rearBumper);
-
-  // Headlights (+Z front)
+  // Glowing Headlights (+Z front)
   const headMat = new THREE.MeshStandardMaterial({
     color: '#fff6d6',
     emissive: '#ffe9a8',
-    emissiveIntensity: 1.8,
-    roughness: 0.2,
+    emissiveIntensity: 2.0,
+    roughness: 0.18,
   });
   for (const sx of [-0.66, 0.66]) {
-    const hl = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.16, 0.08), headMat);
-    hl.position.set(sx, 0.62, 2.15);
+    const hl = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.14, 0.1), headMat);
+    hl.position.set(sx, 0.56, 2.18);
     bodyTilt.add(hl);
   }
 
   // Taillights (-Z rear)
   const brakeLights: THREE.Mesh[] = [];
-  for (const sx of [-0.66, 0.66]) {
+  for (const sx of [-0.64, 0.64]) {
     const tailMat = new THREE.MeshStandardMaterial({
       color: '#ef4444',
       emissive: '#b91c1c',
-      emissiveIntensity: 1.2,
-      roughness: 0.25,
+      emissiveIntensity: 1.4,
+      roughness: 0.22,
     });
-    const tl = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.16, 0.08), tailMat);
-    tl.position.set(sx, 0.64, -2.15);
+    const tl = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.13, 0.1), tailMat);
+    tl.position.set(sx, 0.62, -2.17);
     bodyTilt.add(tl);
     brakeLights.push(tl);
   }
 
-  // Sport rear spoiler
-  if (v.kind === 'sport') {
-    const wing = new THREE.Mesh(new THREE.BoxGeometry(1.86, 0.08, 0.34), darkTrimMat);
-    wing.position.set(0, 1.04, -1.96);
+  if (v.kind === 'sport' || v.kind === 'muscle') {
+    const wing = new THREE.Mesh(new THREE.BoxGeometry(1.76, 0.06, 0.28), darkTrimMat);
+    wing.position.set(0, 1.06, -1.96);
     bodyTilt.add(wing);
-    for (const sx of [-0.62, 0.62]) {
-      const strut = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.22, 0.14), darkTrimMat);
-      strut.position.set(sx, 0.92, -1.96);
+    for (const sx of [-0.56, 0.56]) {
+      const strut = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.22, 0.14), darkTrimMat);
+      strut.position.set(sx, 0.94, -1.96);
       bodyTilt.add(strut);
     }
   }
 
-  // Taxi roof beacon
   if (v.kind === 'taxi') {
     const sign = new THREE.Mesh(
-      new THREE.BoxGeometry(0.65, 0.22, 0.32),
+      new THREE.BoxGeometry(0.65, 0.2, 0.3),
       new THREE.MeshStandardMaterial({
         color: '#fef08a',
         emissive: '#facc15',
-        emissiveIntensity: 1.4,
+        emissiveIntensity: 1.5,
       })
     );
-    sign.position.set(0, 1.4, -0.05);
+    sign.position.set(0, 1.44, -0.22);
     bodyTilt.add(sign);
   }
 
   let sirenRed: THREE.Mesh | undefined;
   let sirenBlue: THREE.Mesh | undefined;
   if (v.isPolice) {
-    const bar = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.1, 0.28), darkTrimMat);
-    bar.position.set(0, 1.35, -0.05);
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.08, 0.26), darkTrimMat);
+    bar.position.set(0, 1.38, -0.22);
     bodyTilt.add(bar);
     sirenRed = new THREE.Mesh(
-      new THREE.BoxGeometry(0.42, 0.12, 0.26),
+      new THREE.BoxGeometry(0.42, 0.11, 0.24),
       new THREE.MeshStandardMaterial({
         color: '#ef4444',
         emissive: '#ef4444',
         emissiveIntensity: 0.3,
       })
     );
-    sirenRed.position.set(-0.34, 1.42, -0.05);
+    sirenRed.position.set(-0.34, 1.44, -0.22);
     bodyTilt.add(sirenRed);
 
     sirenBlue = new THREE.Mesh(
-      new THREE.BoxGeometry(0.42, 0.12, 0.26),
+      new THREE.BoxGeometry(0.42, 0.11, 0.24),
       new THREE.MeshStandardMaterial({
         color: '#3b82f6',
         emissive: '#3b82f6',
         emissiveIntensity: 0.3,
       })
     );
-    sirenBlue.position.set(0.34, 1.42, -0.05);
+    sirenBlue.position.set(0.34, 1.44, -0.22);
     bodyTilt.add(sirenBlue);
   }
 
-  // 4 composite wheels
   const wheels: THREE.Group[] = [];
   const frontSteerPivots: THREE.Group[] = [];
   const tireMat = new THREE.MeshStandardMaterial({ color: '#111318', roughness: 0.85 });
   const wheelCoords: [number, number, boolean][] = [
-    [-0.95, 1.32, true],
-    [0.95, 1.32, true],
+    [-0.95, 1.34, true],
+    [0.95, 1.34, true],
     [-0.95, -1.32, false],
     [0.95, -1.32, false],
   ];
@@ -258,7 +367,7 @@ function buildVehicleMesh(
     tire.rotation.z = Math.PI / 2;
     spinGroup.add(tire);
 
-    const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.21, 0.275, 10), chromeMat);
+    const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.275, 10), chromeMat);
     rim.rotation.z = Math.PI / 2;
     spinGroup.add(rim);
   }
@@ -281,12 +390,12 @@ function buildPedestrianMesh(shadowTex: THREE.Texture) {
   const pantsMat = new THREE.MeshStandardMaterial({ color: '#0f172a', roughness: 0.78 });
   const skinMat = new THREE.MeshStandardMaterial({ color: '#e6b89c', roughness: 0.62 });
 
-  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.66, 0.28), jacketMat);
+  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.66, 0.26), jacketMat);
   torso.position.y = 1.12;
   torso.castShadow = true;
   group.add(torso);
 
-  const chest = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.52, 0.3), shirtMat);
+  const chest = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.52, 0.28), shirtMat);
   chest.position.y = 1.1;
   group.add(chest);
 
@@ -294,20 +403,20 @@ function buildPedestrianMesh(shadowTex: THREE.Texture) {
   head.position.y = 1.64;
   group.add(head);
 
-  const legL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.72, 0.22), pantsMat);
+  const legL = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.72, 0.2), pantsMat);
   legL.position.set(-0.14, 0.42, 0);
   group.add(legL);
 
-  const legR = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.72, 0.22), pantsMat);
+  const legR = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.72, 0.2), pantsMat);
   legR.position.set(0.14, 0.42, 0);
   group.add(legR);
 
-  const armL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.56, 0.18), jacketMat);
-  armL.position.set(-0.36, 1.12, 0);
+  const armL = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.56, 0.16), jacketMat);
+  armL.position.set(-0.35, 1.12, 0);
   group.add(armL);
 
-  const armR = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.56, 0.18), jacketMat);
-  armR.position.set(0.36, 1.12, 0);
+  const armR = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.56, 0.16), jacketMat);
+  armR.position.set(0.35, 1.12, 0);
   group.add(armR);
 
   return { group, legL, legR, armL, armR };
@@ -331,11 +440,15 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
     cash: 500,
     wantedStars: 0,
     mission: {
+      type: 'delivery',
+      title: 'VIP-доставка',
       phase: 'to_pickup',
+      checkpoints: [],
+      checkpointIdx: 0,
       pickup: { x: -64, z: -64, name: 'Деловой центр' },
       dropoff: { x: 64, z: -64, name: 'Неоновый квартал' },
-      reward: 650,
-      timeLeft: 75,
+      reward: 700,
+      timeLeft: 85,
       completedCount: 0,
     },
     missionDist: 90,
@@ -344,12 +457,18 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
     statusBanner: null,
   }));
 
-  // Control refs read inside simulation loop without React re-render overhead
   const keysRef = useRef<Record<string, boolean>>({});
   const touchCtrlRef = useRef({ throttle: 0, steer: 0, handbrake: false });
-  const actionTriggerRef = useRef<{ toggleVehicle: boolean; cycleCam: boolean; startGame: boolean; resetGame: boolean }>({
+  const actionTriggerRef = useRef<{
+    toggleVehicle: boolean;
+    cycleCam: boolean;
+    cycleMission: boolean;
+    startGame: boolean;
+    resetGame: boolean;
+  }>({
     toggleVehicle: false,
     cycleCam: false,
+    cycleMission: false,
     startGame: false,
     resetGame: false,
   });
@@ -385,7 +504,8 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
     let wantedStars = 0;
     let wantedDecayTimer = 0;
     let maxWantedSeen = 0;
-    let mission = createNextMission(layout.missionSpots, vehicles[0].x, vehicles[0].z, 0);
+    let missionIdx = 0;
+    let mission = createNextMission(layout.missionSpots, vehicles[0].x, vehicles[0].z, 0, 'delivery');
     const params = new URLSearchParams(window.location.search);
     let phase: 'title' | 'playing' | 'wasted' =
       params.get('autostart') === '1' ? 'playing' : 'title';
@@ -397,10 +517,9 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
     let lastHudEmit = 0;
     let crashedGrace = 0;
 
-    // Scene setup
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color('#1a2236');
-    scene.fog = new THREE.FogExp2('#1d263d', 0.0048);
+    scene.background = new THREE.Color('#182136');
+    scene.fog = new THREE.FogExp2('#1c253c', 0.0034);
 
     const rect = canvas.getBoundingClientRect();
     const width = Math.max(320, rect.width || canvas.parentElement?.clientWidth || 960);
@@ -414,51 +533,48 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
     );
     const maxAniso = renderer.capabilities.getMaxAnisotropy();
 
-    const camera = new THREE.PerspectiveCamera(62, width / height, 0.5, 650);
+    const camera = new THREE.PerspectiveCamera(62, width / height, 0.5, 820);
 
-    // Golden-hour + dusk city lighting
-    const hemi = new THREE.HemisphereLight('#78a6e8', '#232838', 0.85);
+    const hemi = new THREE.HemisphereLight('#78a8ec', '#222838', 0.9);
     scene.add(hemi);
 
-    const sun = new THREE.DirectionalLight('#ffb066', 2.25);
-    sun.position.set(120, 95, 110);
+    const sun = new THREE.DirectionalLight('#ffb168', 2.3);
+    sun.position.set(160, 120, 140);
     if (!isSoftwareGl) {
       sun.castShadow = true;
       sun.shadow.mapSize.set(1024, 1024);
-      sun.shadow.camera.left = -90;
-      sun.shadow.camera.right = 90;
-      sun.shadow.camera.top = 90;
-      sun.shadow.camera.bottom = -90;
+      sun.shadow.camera.left = -110;
+      sun.shadow.camera.right = 110;
+      sun.shadow.camera.top = 110;
+      sun.shadow.camera.bottom = -110;
     }
     scene.add(sun);
 
-    // Sunset sky dome & horizon glow backdrop disc
-    const skyDome = createSkyDome('#141c33', '#7a3e38', 420);
+    const skyDome = createSkyDome('#131b32', '#7a3f38', 540);
     scene.add(skyDome);
 
     const sunGlow = new THREE.Mesh(
-      new THREE.CircleGeometry(36, 24),
+      new THREE.CircleGeometry(46, 24),
       new THREE.MeshBasicMaterial({ color: '#ff9642', fog: false })
     );
-    sunGlow.position.set(240, 62, 220);
+    sunGlow.position.set(340, 75, 320);
     sunGlow.lookAt(0, 0, 0);
     scene.add(sunGlow);
 
-    // Ocean perimeter around the coastal city island
     const waterMesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(1100, 1100),
+      new THREE.PlaneGeometry(1500, 1500),
       new THREE.MeshStandardMaterial({
         color: '#0c233b',
-        roughness: 0.22,
-        metalness: 0.65,
+        roughness: 0.2,
+        metalness: 0.68,
       })
     );
     waterMesh.rotation.x = -Math.PI / 2;
-    waterMesh.position.y = -0.8;
+    waterMesh.position.y = -0.9;
     scene.add(waterMesh);
 
-    // Asphalt island base
     const asphaltTex = makeAsphaltTexture(maxAniso);
+    asphaltTex.repeat.set(58, 58);
     const roadGround = new THREE.Mesh(
       new THREE.PlaneGeometry(CITY_HALF_SIZE * 2, CITY_HALF_SIZE * 2),
       new THREE.MeshStandardMaterial({
@@ -471,7 +587,6 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
     roadGround.receiveShadow = true;
     scene.add(roadGround);
 
-    // Seawall rim
     const seawallMat = new THREE.MeshStandardMaterial({ color: '#475569', roughness: 0.8 });
     const wallLen = CITY_HALF_SIZE * 2 + 4;
     for (const [wx, wz, rx, rz] of [
@@ -480,12 +595,11 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
       [CITY_HALF_SIZE + 1, 0, 2, wallLen],
       [-CITY_HALF_SIZE - 1, 0, 2, wallLen],
     ] as [number, number, number, number][]) {
-      const sw = new THREE.Mesh(new THREE.BoxGeometry(rx, 1.4, rz), seawallMat);
+      const sw = new THREE.Mesh(new THREE.BoxGeometry(rx, 1.6, rz), seawallMat);
       sw.position.set(wx, 0.2, wz);
       scene.add(sw);
     }
 
-    // Raised sidewalks & parks
     const sidewalkMat = new THREE.MeshStandardMaterial({ color: '#333b4a', roughness: 0.88 });
     const parkMat = new THREE.MeshStandardMaterial({ color: '#1f4d36', roughness: 0.92 });
     const sidewalkGeo = new THREE.BoxGeometry(1, 0.24, 1);
@@ -496,9 +610,28 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
       m.position.set(blk.cx, 0.12, blk.cz);
       m.receiveShadow = true;
       scene.add(m);
+
+      if (blk.hasFountain) {
+        const basin = new THREE.Mesh(
+          new THREE.CylinderGeometry(7.2, 7.8, 0.7, 20),
+          new THREE.MeshStandardMaterial({ color: '#64748b', roughness: 0.6 })
+        );
+        basin.position.set(blk.cx, 0.5, blk.cz);
+        const waterPool = new THREE.Mesh(
+          new THREE.CylinderGeometry(6.4, 6.4, 0.75, 20),
+          new THREE.MeshStandardMaterial({
+            color: '#0ea5e9',
+            emissive: '#0284c7',
+            emissiveIntensity: 0.45,
+            roughness: 0.15,
+          })
+        );
+        waterPool.position.set(blk.cx, 0.54, blk.cz);
+        scene.add(basin, waterPool);
+      }
     }
 
-    // Road lane dashes (InstancedMesh for crisp performance)
+    // Road lane dashes
     const dashGeo = new THREE.PlaneGeometry(0.32, 4.2);
     const dashMat = new THREE.MeshBasicMaterial({ color: '#e2b642' });
     const dashTransforms: THREE.Matrix4[] = [];
@@ -508,8 +641,7 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
     const tmpS = new THREE.Vector3(1, 1, 1);
 
     for (const rc of layout.roadCoords) {
-      for (let d = -CITY_HALF_SIZE + 10; d < CITY_HALF_SIZE - 10; d += 12) {
-        // Skip intersections
+      for (let d = -CITY_HALF_SIZE + 12; d < CITY_HALF_SIZE - 12; d += 14) {
         if (layout.roadCoords.some((cross) => Math.abs(d - cross) < ROAD_WIDTH * 0.6)) continue;
         tmpQ.setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0));
         tmpV.set(rc, 0.025, d);
@@ -526,10 +658,12 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
     dashTransforms.forEach((m, idx) => dashInst.setMatrixAt(idx, m));
     scene.add(dashInst);
 
-    // Buildings with procedural lit facades (shared materials per palette)
+    // Varied Architectural Skyline (Stepped towers, Cylindrical glass towers, Spire towers)
     const facadeCache = new Map<string, THREE.MeshStandardMaterial>();
     const roofMat = new THREE.MeshStandardMaterial({ color: '#1b202b', roughness: 0.85 });
     const buildingGeo = new THREE.BoxGeometry(1, 1, 1);
+    const cylGeo = new THREE.CylinderGeometry(0.5, 0.54, 1, 16);
+    const spireMat = new THREE.MeshBasicMaterial({ color: '#f43f5e' });
 
     for (const b of layout.buildings) {
       const key = `${b.baseColor}_${b.litColor}`;
@@ -539,20 +673,50 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
         tex.repeat.set(1, 2);
         mat = new THREE.MeshStandardMaterial({
           map: tex,
-          roughness: b.style === 'glass' ? 0.25 : 0.72,
-          metalness: b.style === 'glass' ? 0.55 : 0.15,
+          roughness: b.style === 'glass' ? 0.24 : 0.72,
+          metalness: b.style === 'glass' ? 0.58 : 0.15,
         });
         facadeCache.set(key, mat);
       }
-      const mesh = new THREE.Mesh(buildingGeo, [mat, mat, roofMat, roofMat, mat, mat]);
-      mesh.scale.set(b.width, b.height, b.depth);
-      mesh.position.set(b.x, b.height / 2 + 0.24, b.z);
-      mesh.castShadow = !isSoftwareGl;
-      mesh.receiveShadow = true;
-      scene.add(mesh);
+
+      if (b.shape === 'cylinder') {
+        const cyl = new THREE.Mesh(cylGeo, [mat, roofMat, roofMat]);
+        const rad = Math.min(b.width, b.depth);
+        cyl.scale.set(rad, b.height, rad);
+        cyl.position.set(b.x, b.height / 2 + 0.24, b.z);
+        cyl.receiveShadow = true;
+        scene.add(cyl);
+      } else if (b.shape === 'stepped' || b.shape === 'spire') {
+        const podiumH = b.height * 0.55;
+        const topH = b.height * 0.45;
+        const podium = new THREE.Mesh(buildingGeo, [mat, mat, roofMat, roofMat, mat, mat]);
+        podium.scale.set(b.width, podiumH, b.depth);
+        podium.position.set(b.x, podiumH / 2 + 0.24, b.z);
+        podium.receiveShadow = true;
+        scene.add(podium);
+
+        const crown = new THREE.Mesh(buildingGeo, [mat, mat, roofMat, roofMat, mat, mat]);
+        crown.scale.set(b.width * 0.7, topH, b.depth * 0.7);
+        crown.position.set(b.x, podiumH + topH / 2 + 0.24, b.z);
+        scene.add(crown);
+
+        if (b.shape === 'spire' && b.height > 26) {
+          const spire = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.35, 7, 6), roofMat);
+          spire.position.set(b.x, b.height + 3.5, b.z);
+          const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.32, 6, 6), spireMat);
+          beacon.position.set(b.x, b.height + 7.1, b.z);
+          scene.add(spire, beacon);
+        }
+      } else {
+        const mesh = new THREE.Mesh(buildingGeo, [mat, mat, roofMat, roofMat, mat, mat]);
+        mesh.scale.set(b.width, b.height, b.depth);
+        mesh.position.set(b.x, b.height / 2 + 0.24, b.z);
+        mesh.receiveShadow = true;
+        scene.add(mesh);
+      }
     }
 
-    // Palm trees (Instanced trunks + crowns)
+    // Palm trees
     const trunkGeo = new THREE.CylinderGeometry(0.18, 0.28, 5.2, 7);
     const trunkMat = new THREE.MeshStandardMaterial({ color: '#5c4028', roughness: 0.9 });
     const crownGeo = new THREE.ConeGeometry(2.3, 1.4, 7);
@@ -570,7 +734,7 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
     });
     scene.add(trunkInst, crownInst);
 
-    // Streetlamp poles + warm glowing bulbs
+    // Streetlamps
     const poleGeo = new THREE.CylinderGeometry(0.08, 0.12, 5.6, 6);
     const poleMat = new THREE.MeshStandardMaterial({ color: '#334155', roughness: 0.55, metalness: 0.6 });
     const bulbGeo = new THREE.SphereGeometry(0.24, 8, 6);
@@ -588,10 +752,10 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
     });
     scene.add(poleInst, bulbInst);
 
-    // Mission beacon ring + beam
+    // Mission beacon
     const beaconGroup = new THREE.Group();
     const ringMesh = new THREE.Mesh(
-      new THREE.RingGeometry(2.2, 2.8, 28),
+      new THREE.RingGeometry(2.4, 3.1, 28),
       new THREE.MeshBasicMaterial({
         color: '#22d3ee',
         side: THREE.DoubleSide,
@@ -602,20 +766,19 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
     ringMesh.rotation.x = -Math.PI / 2;
     ringMesh.position.y = 0.08;
     const beamMesh = new THREE.Mesh(
-      new THREE.CylinderGeometry(1.4, 2.2, 24, 16, 1, true),
+      new THREE.CylinderGeometry(1.5, 2.4, 28, 16, 1, true),
       new THREE.MeshBasicMaterial({
         color: '#22d3ee',
         transparent: true,
-        opacity: 0.16,
+        opacity: 0.18,
         side: THREE.DoubleSide,
         depthWrite: false,
       })
     );
-    beamMesh.position.y = 12;
+    beamMesh.position.y = 14;
     beaconGroup.add(ringMesh, beamMesh);
     scene.add(beaconGroup);
 
-    // Vehicle meshes + pedestrian mesh
     const shadowTex = makeRadialShadowTexture();
     const vehicleMeshes = new Map<string, ReturnType<typeof buildVehicleMesh>>();
     for (const v of vehicles) {
@@ -630,7 +793,6 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
     pedMesh.group.visible = false;
     scene.add(pedMesh.group);
 
-    // Resize observer
     const onResize = () => {
       const r = canvas.getBoundingClientRect();
       const w = Math.max(320, r.width);
@@ -642,15 +804,11 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
     const ro = new ResizeObserver(onResize);
     ro.observe(canvas);
 
-    // Keyboard listeners
     const onKeyDown = (e: KeyboardEvent) => {
       keysRef.current[e.code] = true;
-      if (e.code === 'KeyF' && !e.repeat) {
-        actionTriggerRef.current.toggleVehicle = true;
-      }
-      if (e.code === 'KeyC' && !e.repeat) {
-        actionTriggerRef.current.cycleCam = true;
-      }
+      if (e.code === 'KeyF' && !e.repeat) actionTriggerRef.current.toggleVehicle = true;
+      if (e.code === 'KeyC' && !e.repeat) actionTriggerRef.current.cycleCam = true;
+      if (e.code === 'KeyM' && !e.repeat) actionTriggerRef.current.cycleMission = true;
       if (e.code === 'KeyH' && !e.repeat && phase === 'playing' && activeVehicleId) {
         soundFX.carHorn();
       }
@@ -661,10 +819,7 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
 
-    // Context lost guard
-    const onContextLost = (e: Event) => {
-      e.preventDefault();
-    };
+    const onContextLost = (e: Event) => e.preventDefault();
     canvas.addEventListener('webglcontextlost', onContextLost);
 
     const drawMinimap = (px: number, pz: number, heading: number, targetX: number, targetZ: number) => {
@@ -674,21 +829,19 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
       if (!ctx) return;
       const S = mm.width;
       const half = S / 2;
-      const scale = 0.72;
+      const scale = 0.58;
 
       ctx.fillStyle = '#0c111b';
       ctx.fillRect(0, 0, S, S);
 
-      // Roads
       ctx.fillStyle = '#242c3c';
       for (const rc of layout.roadCoords) {
         const rx = half + (rc - px) * scale;
         const rz = half + (rc - pz) * scale;
-        ctx.fillRect(rx - 6, 0, 12, S);
-        ctx.fillRect(0, rz - 6, S, 12);
+        ctx.fillRect(rx - 5, 0, 10, S);
+        ctx.fillRect(0, rz - 5, S, 10);
       }
 
-      // Buildings
       ctx.fillStyle = '#3c485e';
       for (const b of layout.buildings) {
         const bx = half + (b.x - px) * scale;
@@ -697,18 +850,23 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
         ctx.fillRect(bx - (b.width * scale) / 2, bz - (b.depth * scale) / 2, b.width * scale, b.depth * scale);
       }
 
-      // Police dots
+      // Traffic & Police dots
       for (const v of vehicles) {
-        if (!v.isPolice) continue;
+        if (v.id === activeVehicleId) continue;
         const vx = half + (v.x - px) * scale;
         const vz = half + (v.z - pz) * scale;
-        ctx.fillStyle = wantedStars > 0 && Math.floor(sirenClock * 5) % 2 === 0 ? '#ef4444' : '#3b82f6';
-        ctx.beginPath();
-        ctx.arc(vx, vz, 3.2, 0, Math.PI * 2);
-        ctx.fill();
+        if (vx < 0 || vx > S || vz < 0 || vz > S) continue;
+        if (v.isPolice) {
+          ctx.fillStyle = wantedStars > 0 && Math.floor(sirenClock * 5) % 2 === 0 ? '#ef4444' : '#3b82f6';
+          ctx.beginPath();
+          ctx.arc(vx, vz, 3.2, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.fillStyle = '#94a3b8';
+          ctx.fillRect(vx - 1.5, vz - 1.5, 3, 3);
+        }
       }
 
-      // Mission beacon on edge or map
       const tx = half + (targetX - px) * scale;
       const tz = half + (targetZ - pz) * scale;
       const clampX = Math.max(7, Math.min(S - 7, tx));
@@ -718,7 +876,6 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
       ctx.arc(clampX, clampZ, 4.5, 0, Math.PI * 2);
       ctx.fill();
 
-      // Player triangle
       ctx.save();
       ctx.translate(half, half);
       ctx.rotate(-heading + Math.PI);
@@ -751,7 +908,7 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
       if (actionTriggerRef.current.startGame) {
         actionTriggerRef.current.startGame = false;
         phase = 'playing';
-        statusBanner = 'Подберите груз на точке и доставьте до цели';
+        statusBanner = `${mission.title} · Нажмите M чтобы сменить контракт`;
         bannerTimer = 4.0;
       }
 
@@ -770,6 +927,23 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
       if (actionTriggerRef.current.cycleCam) {
         actionTriggerRef.current.cycleCam = false;
         cameraMode = (cameraMode + 1) % 3;
+      }
+
+      if (actionTriggerRef.current.cycleMission && phase === 'playing') {
+        actionTriggerRef.current.cycleMission = false;
+        missionIdx += 1;
+        const mTypes: MissionType[] = ['delivery', 'sprint', 'heist'];
+        const chosen = mTypes[missionIdx % mTypes.length];
+        const px = activeVehicleId ? (vehicles.find((v) => v.id === activeVehicleId)?.x ?? 0) : ped.x;
+        const pz = activeVehicleId ? (vehicles.find((v) => v.id === activeVehicleId)?.z ?? 0) : ped.z;
+        mission = createNextMission(layout.missionSpots, px, pz, mission.completedCount, chosen);
+        if (chosen === 'heist') {
+          wantedStars = Math.max(wantedStars, 2);
+          maxWantedSeen = Math.max(maxWantedSeen, wantedStars);
+        }
+        statusBanner = `Новый контракт: ${mission.title}`;
+        bannerTimer = 3.2;
+        soundFX.click();
       }
 
       if (bannerTimer > 0) {
@@ -794,7 +968,6 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
       const clampedThrottle = Math.max(-1, Math.min(1, throttle));
       const clampedSteer = Math.max(-1, Math.min(1, steer));
 
-      // Enter / Exit vehicle toggle
       if (actionTriggerRef.current.toggleVehicle && phase === 'playing') {
         actionTriggerRef.current.toggleVehicle = false;
         if (activeVehicleId) {
@@ -807,7 +980,6 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
           activeVehicleId = null;
           soundFX.click();
         } else {
-          // Find nearest vehicle within 5.5m
           let best: VehicleState | null = null;
           let bestDist = 5.5;
           for (const v of vehicles) {
@@ -873,7 +1045,6 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
           );
         }
 
-        // Step traffic & police AI
         for (const v of vehicles) {
           if (v.id === activeVehicleId) continue;
           const pursuit = v.isPolice && wantedStars > 0;
@@ -881,7 +1052,6 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
           stepVehiclePhysics(v, aiIn, dt, layout.buildings);
         }
 
-        // Vehicle-to-vehicle collisions
         for (let i = 0; i < vehicles.length; i++) {
           for (let j = i + 1; j < vehicles.length; j++) {
             const imp = resolveVehiclePairCollision(vehicles[i], vehicles[j]);
@@ -891,7 +1061,7 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
                 crashedGrace = 0.45;
               }
               if (vehicles[i].isPolice || vehicles[j].isPolice || imp > 13) {
-                if (wantedStars < 3) wantedStars += 1;
+                if (wantedStars < 4) wantedStars += 1;
                 maxWantedSeen = Math.max(maxWantedSeen, wantedStars);
                 wantedDecayTimer = 0;
               }
@@ -899,12 +1069,11 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
           }
         }
 
-        // Wanted stars decay when far from police
         if (wantedStars > 0) {
           const nearestCop = vehicles
             .filter((v) => v.isPolice)
             .reduce((min, v) => Math.min(min, Math.hypot(v.x - playerX, v.z - playerZ)), 999);
-          if (nearestCop > 70) {
+          if (nearestCop > 80) {
             wantedDecayTimer += dt;
             if (wantedDecayTimer > 10) {
               wantedStars -= 1;
@@ -915,14 +1084,39 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
           }
         }
 
-        // Mission progression
         mission.timeLeft -= dt;
-        const target = mission.phase === 'to_pickup' ? mission.pickup : mission.dropoff;
-        const distToTarget = Math.hypot(playerX - target.x, playerZ - target.z);
-        if (distToTarget < 5.5) {
-          if (mission.phase === 'to_pickup') {
+        const activeTarget =
+          mission.type === 'sprint'
+            ? mission.checkpoints[mission.checkpointIdx] ?? mission.dropoff
+            : mission.phase === 'to_pickup'
+            ? mission.pickup
+            : mission.dropoff;
+        const distToTarget = Math.hypot(playerX - activeTarget.x, playerZ - activeTarget.z);
+
+        if (distToTarget < 6.0) {
+          if (mission.type === 'sprint') {
+            if (mission.checkpointIdx < mission.checkpoints.length - 1) {
+              mission.checkpointIdx += 1;
+              mission.dropoff = mission.checkpoints[mission.checkpointIdx];
+              soundFX.cashPickup();
+              statusBanner = `Чекпоинт ${mission.checkpointIdx}/${mission.checkpoints.length}: ${mission.dropoff.name}`;
+              bannerTimer = 2.8;
+            } else {
+              cash += mission.reward;
+              soundFX.winFanfare();
+              onRecordUpdate({ cashEarned: mission.reward, missionsCompleted: 1, maxWanted: maxWantedSeen });
+              statusBanner = `Спринт завершён! +$${mission.reward}`;
+              bannerTimer = 3.8;
+              missionIdx += 1;
+              mission = createNextMission(layout.missionSpots, playerX, playerZ, mission.completedCount + 1);
+            }
+          } else if (mission.phase === 'to_pickup') {
             mission.phase = 'to_dropoff';
-            mission.timeLeft = Math.max(mission.timeLeft, 65);
+            mission.timeLeft = Math.max(mission.timeLeft, 75);
+            if (mission.type === 'heist') {
+              wantedStars = Math.max(wantedStars, 2);
+              maxWantedSeen = Math.max(maxWantedSeen, wantedStars);
+            }
             soundFX.cashPickup();
             statusBanner = `Груз забран! Доставьте в: ${mission.dropoff.name}`;
             bannerTimer = 3.5;
@@ -930,33 +1124,20 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
             cash += mission.reward;
             wantedStars = Math.max(0, wantedStars - 1);
             soundFX.winFanfare();
-            onRecordUpdate({
-              cashEarned: mission.reward,
-              missionsCompleted: 1,
-              maxWanted: maxWantedSeen,
-            });
+            onRecordUpdate({ cashEarned: mission.reward, missionsCompleted: 1, maxWanted: maxWantedSeen });
             statusBanner = `Контракт выполнен! +$${mission.reward}`;
             bannerTimer = 3.8;
-            mission = createNextMission(
-              layout.missionSpots,
-              playerX,
-              playerZ,
-              mission.completedCount + 1
-            );
+            missionIdx += 1;
+            mission = createNextMission(layout.missionSpots, playerX, playerZ, mission.completedCount + 1);
           }
         } else if (mission.timeLeft <= 0) {
           statusBanner = 'Время вышло — назначен новый контракт';
           bannerTimer = 3.0;
-          mission = createNextMission(
-            layout.missionSpots,
-            playerX,
-            playerZ,
-            mission.completedCount
-          );
+          missionIdx += 1;
+          mission = createNextMission(layout.missionSpots, playerX, playerZ, mission.completedCount);
         }
       }
 
-      // Sync vehicle meshes
       for (const v of vehicles) {
         const vm = vehicleMeshes.get(v.id);
         if (!vm) continue;
@@ -965,12 +1146,8 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
         vm.bodyTilt.rotation.x = v.pitch;
         vm.bodyTilt.rotation.z = v.roll;
 
-        for (const p of vm.frontSteerPivots) {
-          p.rotation.y = v.steerAngle;
-        }
-        for (const w of vm.wheels) {
-          w.rotation.x = v.wheelSpin;
-        }
+        for (const p of vm.frontSteerPivots) p.rotation.y = v.steerAngle;
+        for (const w of vm.wheels) w.rotation.x = v.wheelSpin;
 
         const braking = v.id === activeVehicleId && (clampedThrottle < -0.1 || handbrake);
         for (const bl of vm.brakeLights) {
@@ -981,19 +1158,14 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
           const activeSiren = wantedStars > 0;
           const phaseFlip = Math.floor(sirenClock * 8) % 2 === 0;
           (vm.sirenRed.material as THREE.MeshStandardMaterial).emissiveIntensity = activeSiren
-            ? phaseFlip
-              ? 3.8
-              : 0.2
+            ? phaseFlip ? 3.8 : 0.2
             : 0.25;
           (vm.sirenBlue.material as THREE.MeshStandardMaterial).emissiveIntensity = activeSiren
-            ? !phaseFlip
-              ? 3.8
-              : 0.2
+            ? !phaseFlip ? 3.8 : 0.2
             : 0.25;
         }
       }
 
-      // Sync pedestrian mesh
       if (!activeCar) {
         pedMesh.group.visible = true;
         pedMesh.group.position.set(ped.x, 0, ped.z);
@@ -1008,26 +1180,29 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
         pedMesh.group.visible = false;
       }
 
-      // Sync mission beacon
-      const activeTarget = mission.phase === 'to_pickup' ? mission.pickup : mission.dropoff;
+      const activeTarget =
+        mission.type === 'sprint'
+          ? mission.checkpoints[mission.checkpointIdx] ?? mission.dropoff
+          : mission.phase === 'to_pickup'
+          ? mission.pickup
+          : mission.dropoff;
       beaconGroup.position.set(activeTarget.x, 0, activeTarget.z);
       const beaconColor = mission.phase === 'to_pickup' ? '#22d3ee' : '#f59e0b';
       (ringMesh.material as THREE.MeshBasicMaterial).color.set(beaconColor);
       (beamMesh.material as THREE.MeshBasicMaterial).color.set(beaconColor);
       ringMesh.scale.setScalar(1 + Math.sin(sirenClock * 4) * 0.1);
 
-      // Update chase camera
       if (phase === 'title') {
         const orbitAng = sirenClock * 0.22;
         camera.position.set(
-          vehicles[0].x + Math.sin(orbitAng) * 11,
-          4.4,
-          vehicles[0].z + Math.cos(orbitAng) * 11
+          vehicles[0].x + Math.sin(orbitAng) * 10.5,
+          3.9,
+          vehicles[0].z + Math.cos(orbitAng) * 10.5
         );
-        camera.lookAt(vehicles[0].x, 1.1, vehicles[0].z);
+        camera.lookAt(vehicles[0].x, 1.0, vehicles[0].z);
       } else {
-        const camBackDist = activeCar ? (cameraMode === 0 ? 8.2 : cameraMode === 1 ? 12.2 : 0.4) : 5.2;
-        const camHeight = activeCar ? (cameraMode === 0 ? 3.5 : cameraMode === 1 ? 5.2 : 1.55) : 2.7;
+        const camBackDist = activeCar ? (cameraMode === 0 ? 7.8 : cameraMode === 1 ? 12.2 : 0.4) : 5.2;
+        const camHeight = activeCar ? (cameraMode === 0 ? 3.85 : cameraMode === 1 ? 5.2 : 1.55) : 2.7;
         const yawRef = activeCar ? activeCar.heading : cameraYaw + Math.PI;
 
         let desiredX = playerX - Math.sin(yawRef) * camBackDist;
@@ -1052,7 +1227,7 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
         camera.lookAt(smoothLookAt);
 
         const spd = activeCar ? Math.abs(activeCar.speed) : 0;
-        const targetFov = 62 + Math.min(14, (spd / 38) * 14);
+        const targetFov = 62 + Math.min(14, (spd / 42) * 14);
         if (Math.abs(camera.fov - targetFov) > 0.2) {
           camera.fov += (targetFov - camera.fov) * Math.min(1, dt * 6);
           camera.updateProjectionMatrix();
@@ -1101,7 +1276,12 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
     };
   }, [onRecordUpdate]);
 
-  const targetPoint = hud.mission.phase === 'to_pickup' ? hud.mission.pickup : hud.mission.dropoff;
+  const targetPoint =
+    hud.mission.type === 'sprint'
+      ? hud.mission.checkpoints[hud.mission.checkpointIdx] ?? hud.mission.dropoff
+      : hud.mission.phase === 'to_pickup'
+      ? hud.mission.pickup
+      : hud.mission.dropoff;
 
   return (
     <div className="max-w-6xl mx-auto flex flex-col gap-3">
@@ -1112,12 +1292,12 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
           aria-label="Мегаполис Drive 3D"
         />
 
-        {/* HUD Top-Left: Mission & Status */}
+        {/* HUD Top-Left */}
         {hud.phase === 'playing' && (
           <div className="absolute top-3 left-3 flex flex-col gap-2 pointer-events-none max-w-xs">
             <div className="bg-[#0b101b]/90 border border-white/12 rounded-xl px-3.5 py-2.5 text-xs">
               <div className="text-[11px] uppercase tracking-wider text-cyan-400 font-bold">
-                {hud.mission.phase === 'to_pickup' ? 'Контракт · Подбор' : 'Контракт · Доставка'}
+                {hud.mission.title}
               </div>
               <div className="text-sm font-semibold text-white mt-0.5">{targetPoint.name}</div>
               <div className="flex items-center gap-3 mt-1 text-slate-300 font-mono-num">
@@ -1139,7 +1319,7 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
           </div>
         )}
 
-        {/* HUD Top-Right: Cash, Wanted Stars & Speed */}
+        {/* HUD Top-Right */}
         {hud.phase === 'playing' && (
           <div className="absolute top-3 right-3 flex flex-col items-end gap-2 pointer-events-none">
             <div className="bg-[#0b101b]/90 border border-white/12 rounded-xl px-3.5 py-2 text-right">
@@ -1150,11 +1330,7 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
                 {[1, 2, 3, 4, 5].map((star) => (
                   <span
                     key={star}
-                    className={
-                      star <= hud.wantedStars
-                        ? 'text-amber-400'
-                        : 'text-slate-700'
-                    }
+                    className={star <= hud.wantedStars ? 'text-amber-400' : 'text-slate-700'}
                   >
                     ★
                   </span>
@@ -1179,7 +1355,7 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
           </div>
         )}
 
-        {/* HUD Bottom-Left: Corner Radar Minimap */}
+        {/* Corner Radar Minimap */}
         {hud.phase === 'playing' && (
           <div className="absolute bottom-3 left-3 pointer-events-none">
             <canvas
@@ -1191,10 +1367,19 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
           </div>
         )}
 
-        {/* HUD Bottom-Right: Interactive Action & Touch Controls */}
+        {/* Action Buttons */}
         {hud.phase === 'playing' && (
           <div className="absolute bottom-3 right-3 flex flex-col items-end gap-2">
             <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  actionTriggerRef.current.cycleMission = true;
+                }}
+                className="px-3 py-1.5 rounded-lg bg-[#0b101b]/90 hover:bg-[#192236] border border-white/15 text-xs font-semibold text-amber-300"
+              >
+                Миссия (M)
+              </button>
               <button
                 type="button"
                 onClick={() => {
@@ -1219,64 +1404,39 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
               </button>
             </div>
 
-            {/* Compact Touch Pad for Mobile / Pointer Driving */}
             <div className="flex items-center gap-1.5 sm:hidden">
               <button
                 type="button"
-                onPointerDown={() => {
-                  touchCtrlRef.current.steer = 1;
-                }}
-                onPointerUp={() => {
-                  touchCtrlRef.current.steer = 0;
-                }}
-                onPointerLeave={() => {
-                  touchCtrlRef.current.steer = 0;
-                }}
+                onPointerDown={() => { touchCtrlRef.current.steer = 1; }}
+                onPointerUp={() => { touchCtrlRef.current.steer = 0; }}
+                onPointerLeave={() => { touchCtrlRef.current.steer = 0; }}
                 className="w-11 h-11 rounded-lg bg-[#111827]/90 border border-white/15 text-white font-bold"
               >
                 ◀
               </button>
               <button
                 type="button"
-                onPointerDown={() => {
-                  touchCtrlRef.current.steer = -1;
-                }}
-                onPointerUp={() => {
-                  touchCtrlRef.current.steer = 0;
-                }}
-                onPointerLeave={() => {
-                  touchCtrlRef.current.steer = 0;
-                }}
+                onPointerDown={() => { touchCtrlRef.current.steer = -1; }}
+                onPointerUp={() => { touchCtrlRef.current.steer = 0; }}
+                onPointerLeave={() => { touchCtrlRef.current.steer = 0; }}
                 className="w-11 h-11 rounded-lg bg-[#111827]/90 border border-white/15 text-white font-bold"
               >
                 ▶
               </button>
               <button
                 type="button"
-                onPointerDown={() => {
-                  touchCtrlRef.current.throttle = -1;
-                }}
-                onPointerUp={() => {
-                  touchCtrlRef.current.throttle = 0;
-                }}
-                onPointerLeave={() => {
-                  touchCtrlRef.current.throttle = 0;
-                }}
+                onPointerDown={() => { touchCtrlRef.current.throttle = -1; }}
+                onPointerUp={() => { touchCtrlRef.current.throttle = 0; }}
+                onPointerLeave={() => { touchCtrlRef.current.throttle = 0; }}
                 className="px-3 h-11 rounded-lg bg-rose-600/90 text-white text-xs font-bold"
               >
                 Стоп
               </button>
               <button
                 type="button"
-                onPointerDown={() => {
-                  touchCtrlRef.current.throttle = 1;
-                }}
-                onPointerUp={() => {
-                  touchCtrlRef.current.throttle = 0;
-                }}
-                onPointerLeave={() => {
-                  touchCtrlRef.current.throttle = 0;
-                }}
+                onPointerDown={() => { touchCtrlRef.current.throttle = 1; }}
+                onPointerUp={() => { touchCtrlRef.current.throttle = 0; }}
+                onPointerLeave={() => { touchCtrlRef.current.throttle = 0; }}
                 className="px-4 h-11 rounded-lg bg-emerald-500/90 text-slate-950 text-xs font-bold"
               >
                 Газ
@@ -1291,14 +1451,14 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
             <div className="max-w-md w-full bg-[#111726]/95 border border-white/12 rounded-2xl p-6 text-center flex flex-col gap-4">
               <div>
                 <div className="text-xs font-semibold uppercase tracking-widest text-amber-400">
-                  Открытый 3D-город · WebGL
+                  Расширенный 3D-мегаполис · 640×640 м
                 </div>
                 <h2 className="font-display text-2xl sm:text-3xl font-bold text-white mt-1">
                   Мегаполис Drive 3D
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-300 mt-2 leading-relaxed">
-                  Свободная езда по ночному прибрежному мегаполису, дрифт с ручником,
-                  угон транспорта, уход от полицейской погони и скоростные контракты.
+                  Большой прибрежный город с небоскрёбами, парками, плотным трафиком,
+                  физикой дрифта, сменой авто, погонями полиции и 3 типами контрактов.
                 </p>
               </div>
               <div className="text-xs text-slate-400 flex flex-wrap justify-center gap-x-3 gap-y-1">
@@ -1308,7 +1468,7 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
                 <span>·</span>
                 <span>F — выйти/сесть</span>
                 <span>·</span>
-                <span>C — камера</span>
+                <span>M — миссия</span>
               </div>
               <button
                 type="button"
@@ -1342,10 +1502,9 @@ export const CityDriverGame: React.FC<CityDriverGameProps> = ({ onRecordUpdate }
         )}
       </div>
 
-      {/* Bottom Legend Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-2.5 bg-[#111622] border border-white/8 rounded-xl text-xs text-slate-400">
-        <span>Управление: WASD / Стрелки — движение · Space — ручной тормоз/дрифт · F — выйти/сесть в любое авто · H — сигнал</span>
-        <span className="text-slate-300">Цель: доезжайте до голубых и золотых маяков на радаре</span>
+        <span>WASD / Стрелки — руль · Space — дрифт · F — выйти/сесть в любое авто · M — смена миссии · C — камера</span>
+        <span className="text-slate-300">3 типа контрактов: VIP-доставка, Спринт, Побег</span>
       </div>
     </div>
   );

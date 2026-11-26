@@ -265,6 +265,31 @@ export const RecordsView: React.FC<RecordsViewProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Color Block */}
+        <div className="bg-[#111622] border border-white/8 rounded-xl p-5 flex flex-col gap-3">
+          <h2 className="text-base font-bold text-white">Color Block</h2>
+          <div className="grid grid-cols-3 gap-3 text-xs pt-1">
+            <div>
+              <div className="text-slate-400">Рекорд</div>
+              <div className="font-mono-num text-xl font-bold text-cyan-300">
+                {records.colorBlock.bestScore}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-400">Линий</div>
+              <div className="font-mono-num text-xl font-bold text-slate-100">
+                {records.colorBlock.totalLinesCleared}
+              </div>
+            </div>
+            <div>
+              <div className="text-slate-400">Макс. комбо</div>
+              <div className="font-mono-num text-xl font-bold text-violet-300">
+                ×{records.colorBlock.bestCombo}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

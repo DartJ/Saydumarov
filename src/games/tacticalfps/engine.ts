@@ -8,7 +8,7 @@ export interface WeaponSpec {
   price: number;
   damage: number;
   headMultiplier: number;
-  fireInterval: number; // seconds between shots
+  fireInterval: number;
   automatic: boolean;
   magSize: number;
   reserveMax: number;
@@ -54,9 +54,9 @@ export const WEAPONS: Record<WeaponId, WeaponSpec> = {
     magSize: 12,
     reserveMax: 36,
     reloadTime: 1.45,
-    baseSpread: 0.005,
+    baseSpread: 0.004,
     moveSpread: 0.022,
-    recoilKick: 0.022,
+    recoilKick: 0.02,
     moveSpeed: 6.8,
     killReward: 300,
     range: 110,
@@ -73,9 +73,9 @@ export const WEAPONS: Record<WeaponId, WeaponSpec> = {
     magSize: 30,
     reserveMax: 90,
     reloadTime: 1.9,
-    baseSpread: 0.006,
-    moveSpread: 0.042,
-    recoilKick: 0.028,
+    baseSpread: 0.005,
+    moveSpread: 0.045,
+    recoilKick: 0.026,
     moveSpeed: 6.1,
     killReward: 300,
     range: 130,
@@ -92,9 +92,9 @@ export const WEAPONS: Record<WeaponId, WeaponSpec> = {
     magSize: 25,
     reserveMax: 75,
     reloadTime: 1.8,
-    baseSpread: 0.004,
+    baseSpread: 0.0035,
     moveSpread: 0.032,
-    recoilKick: 0.02,
+    recoilKick: 0.019,
     moveSpeed: 6.2,
     killReward: 300,
     range: 130,
@@ -112,8 +112,8 @@ export const WEAPONS: Record<WeaponId, WeaponSpec> = {
     reserveMax: 30,
     reloadTime: 2.2,
     baseSpread: 0.001,
-    moveSpread: 0.075,
-    recoilKick: 0.065,
+    moveSpread: 0.08,
+    recoilKick: 0.06,
     moveSpeed: 5.5,
     killReward: 150,
     range: 180,
@@ -194,29 +194,31 @@ export function createTacticalMap(): TacticalMap {
     boxCenter('mid_doors_w', -6.5, 2.4, -2, 7.5, 4.8, 1.5, 'concrete'),
     boxCenter('mid_doors_e', 6.5, 2.4, -2, 7.5, 4.8, 1.5, 'concrete'),
 
-    // Mid crates (cover)
-    boxCenter('mid_xbox', 0, 1.0, 9, 2.8, 2.0, 2.8, 'crate'),
-    boxCenter('mid_crate_n', 0, 0.9, -14, 2.4, 1.8, 2.4, 'crate'),
+    // Mid Xbox + step crate (walkable/jumpable!)
+    boxCenter('mid_xbox', 0, 0.8, 9, 2.8, 1.6, 2.8, 'crate'),
+    boxCenter('mid_step', -1.8, 0.4, 9, 1.4, 0.8, 1.8, 'crate'),
+    boxCenter('mid_crate_n', 0, 0.75, -14, 2.4, 1.5, 2.4, 'crate'),
 
-    // Bombsite A (East lane, around x=27, z=-18)
+    // Bombsite A (East lane, around x=27, z=-18) + walkable step crates
     boxCenter('a_container', 26, 1.45, -18, 3.2, 2.9, 7.2, 'container'),
-    boxCenter('a_crate_1', 21, 0.9, -24, 2.4, 1.8, 2.4, 'crate'),
-    boxCenter('a_crate_2', 32, 1.1, -11, 2.6, 2.2, 2.6, 'crate'),
-    boxCenter('a_long_cover', 27, 0.95, 10, 3.4, 1.9, 2.2, 'crate'),
-    boxCenter('a_car_cover', 25, 0.85, 22, 4.2, 1.7, 2.2, 'concrete'),
+    boxCenter('a_crate_1', 21, 0.75, -24, 2.4, 1.5, 2.4, 'crate'),
+    boxCenter('a_crate_2', 32, 0.9, -11, 2.6, 1.8, 2.6, 'crate'),
+    boxCenter('a_crate_step', 29.8, 0.45, -11, 1.6, 0.9, 1.8, 'crate'),
+    boxCenter('a_long_cover', 27, 0.75, 10, 3.4, 1.5, 2.2, 'crate'),
+    boxCenter('a_car_cover', 25, 0.75, 22, 4.2, 1.5, 2.2, 'concrete'),
 
     // Bombsite B (West lane, around x=-27, z=-18)
     boxCenter('b_container', -27, 1.45, -16, 6.8, 2.9, 3.1, 'container'),
-    boxCenter('b_crate_1', -22, 1.0, -24, 2.6, 2.0, 2.6, 'crate'),
-    boxCenter('b_crate_2', -33, 0.9, -21, 2.2, 1.8, 2.2, 'crate'),
+    boxCenter('b_crate_1', -22, 0.8, -24, 2.6, 1.6, 2.6, 'crate'),
+    boxCenter('b_crate_2', -33, 0.75, -21, 2.2, 1.5, 2.2, 'crate'),
     boxCenter('b_tunnel_wall', -28, 2.5, 12, 10, 5, 2, 'sandstone'),
-    boxCenter('b_crate_s', -23, 0.9, 22, 2.5, 1.8, 2.5, 'crate'),
+    boxCenter('b_crate_s', -23, 0.75, 22, 2.5, 1.5, 2.5, 'crate'),
 
     // Spawn cover boxes
-    boxCenter('ct_cover_w', -8, 1.0, -30, 3.2, 2.0, 1.8, 'crate'),
-    boxCenter('ct_cover_e', 8, 1.0, -30, 3.2, 2.0, 1.8, 'crate'),
-    boxCenter('t_cover_w', -8, 1.0, 30, 3.2, 2.0, 1.8, 'crate'),
-    boxCenter('t_cover_e', 8, 1.0, 30, 3.2, 2.0, 1.8, 'crate'),
+    boxCenter('ct_cover_w', -8, 0.8, -30, 3.2, 1.6, 1.8, 'crate'),
+    boxCenter('ct_cover_e', 8, 0.8, -30, 3.2, 1.6, 1.8, 'crate'),
+    boxCenter('t_cover_w', -8, 0.8, 30, 3.2, 1.6, 1.8, 'crate'),
+    boxCenter('t_cover_e', 8, 0.8, 30, 3.2, 1.6, 1.8, 'crate'),
   ];
 
   const ctSpawns = [
@@ -266,13 +268,16 @@ export interface ActorState {
   x: number;
   y: number;
   z: number;
+  vx: number;
   vy: number;
+  vz: number;
   yaw: number;
   pitch: number;
   hp: number;
   armor: number;
   alive: boolean;
   crouching: boolean;
+  crouchFrac: number; // smooth 0..1 crouch eye transition
   grounded: boolean;
   weaponId: WeaponId;
   primaryWeapon: WeaponId | null;
@@ -309,13 +314,16 @@ export function createActor(
     x: spawn.x,
     y: 0,
     z: spawn.z,
+    vx: 0,
     vy: 0,
-    yaw: team === 'ct' ? Math.PI : 0, // CT faces +Z (South), T faces -Z (North)
+    vz: 0,
+    yaw: team === 'ct' ? Math.PI : 0,
     pitch: 0,
     hp: 100,
     armor: isPlayer ? 0 : 50,
     alive: true,
     crouching: false,
+    crouchFrac: 0,
     grounded: true,
     weaponId: startWep,
     primaryWeapon: primary,
@@ -335,10 +343,16 @@ export function createActor(
   };
 }
 
+/**
+ * CS2 / Source-inspired movement physics:
+ * - True horizontal velocity with ground acceleration & counter-strafe friction
+ * - Air acceleration for jump strafing
+ * - Walkable/jumpable crate landing & step-up (land on top of AABBs!)
+ */
 export function resolveActorMovement(
   actor: ActorState,
-  moveX: number,
-  moveZ: number,
+  wishDirX: number,
+  wishDirZ: number,
   jump: boolean,
   crouch: boolean,
   walkQuiet: boolean,
@@ -346,48 +360,103 @@ export function resolveActorMovement(
   map: TacticalMap
 ): void {
   actor.crouching = crouch;
+  const targetCrouch = crouch ? 1 : 0;
+  actor.crouchFrac += (targetCrouch - actor.crouchFrac) * Math.min(1, dt * 14);
+
   const spec = WEAPONS[actor.weaponId];
   let maxSpd = spec.moveSpeed;
-  if (crouch) maxSpd *= 0.52;
-  else if (walkQuiet) maxSpd *= 0.58;
+  if (crouch) maxSpd *= 0.5;
+  else if (walkQuiet) maxSpd *= 0.56;
 
-  const len = Math.hypot(moveX, moveZ);
-  let vx = 0;
-  let vz = 0;
-  if (len > 0.001) {
-    vx = (moveX / len) * maxSpd;
-    vz = (moveZ / len) * maxSpd;
-    actor.walkCycle += dt * (crouch ? 5 : 9.5);
+  // 1. Ground Friction / Air Drag
+  if (actor.grounded) {
+    const spd = Math.hypot(actor.vx, actor.vz);
+    if (spd > 0.001) {
+      const friction = 7.2;
+      const control = Math.max(spd, 2.2);
+      const drop = control * friction * dt;
+      const newSpd = Math.max(0, spd - drop);
+      actor.vx *= newSpd / spd;
+      actor.vz *= newSpd / spd;
+    }
   }
 
-  if (jump && actor.grounded && !crouch) {
-    actor.vy = 6.9;
+  // 2. Source-style Acceleration (crisp counter-strafing!)
+  const wishLen = Math.hypot(wishDirX, wishDirZ);
+  if (wishLen > 0.001) {
+    const wx = wishDirX / wishLen;
+    const wz = wishDirZ / wishLen;
+    const accelRate = actor.grounded ? 11.5 : 2.6;
+    const currentProj = actor.vx * wx + actor.vz * wz;
+    const addSpeed = maxSpd - currentProj;
+    if (addSpeed > 0) {
+      const accelSpeed = Math.min(addSpeed, accelRate * maxSpd * dt);
+      actor.vx += accelSpeed * wx;
+      actor.vz += accelSpeed * wz;
+    }
+    if (actor.grounded) {
+      actor.walkCycle += dt * (crouch ? 5.2 : walkQuiet ? 6.2 : 9.8);
+    }
+  }
+
+  // 3. Jump & Gravity
+  if (jump && actor.grounded) {
+    actor.vy = crouch ? 6.1 : 7.15;
     actor.grounded = false;
   }
 
-  actor.vy -= 19.5 * dt;
-  actor.y += actor.vy * dt;
-  if (actor.y <= 0) {
-    actor.y = 0;
-    actor.vy = 0;
-    actor.grounded = true;
+  actor.vy -= 19.8 * dt;
+  const prevY = actor.y;
+  let ny = actor.y + actor.vy * dt;
+
+  const radius = 0.45;
+  const actorHeight = 1.78 - actor.crouchFrac * 0.52;
+  let nx = actor.x + actor.vx * dt;
+  let nz = actor.z + actor.vz * dt;
+
+  const bound = map.halfSize - 1.5;
+  if (nx < -bound) {
+    nx = -bound;
+    actor.vx = Math.max(0, actor.vx);
+  } else if (nx > bound) {
+    nx = bound;
+    actor.vx = Math.min(0, actor.vx);
+  }
+  if (nz < -bound) {
+    nz = -bound;
+    actor.vz = Math.max(0, actor.vz);
+  } else if (nz > bound) {
+    nz = bound;
+    actor.vz = Math.min(0, actor.vz);
   }
 
-  const radius = 0.46;
-  const actorHeight = crouch ? 1.25 : 1.78;
-  let nx = actor.x + vx * dt;
-  let nz = actor.z + vz * dt;
-
-  // Map outer clamp
-  const bound = map.halfSize - 1.5;
-  nx = Math.max(-bound, Math.min(bound, nx));
-  nz = Math.max(-bound, Math.min(bound, nz));
-
+  // 4. Horizontal AABB push-out & vertical landing on top of crates!
+  let supportY = 0;
   for (let i = 0; i < map.boxes.length; i++) {
     const b = map.boxes[i];
-    if (actor.y + actorHeight <= b.minY + 0.05 || actor.y >= b.maxY - 0.05) {
+    const overXZ =
+      nx + radius > b.minX &&
+      nx - radius < b.maxX &&
+      nz + radius > b.minZ &&
+      nz - radius < b.maxZ;
+
+    // Landing on top of crate/box or stepping onto low step (<= 0.48m)
+    if (overXZ && prevY >= b.maxY - 0.48 && ny <= b.maxY && actor.vy <= 0.1) {
+      if (b.maxY > supportY) supportY = b.maxY;
       continue;
     }
+
+    // Ceiling bump
+    if (overXZ && prevY + actorHeight <= b.minY + 0.08 && ny + actorHeight > b.minY && actor.vy > 0) {
+      ny = b.minY - actorHeight;
+      actor.vy = 0;
+      continue;
+    }
+
+    if (ny + actorHeight <= b.minY + 0.05 || ny >= b.maxY - 0.05) {
+      continue;
+    }
+
     const cx = Math.max(b.minX, Math.min(nx, b.maxX));
     const cz = Math.max(b.minZ, Math.min(nz, b.maxZ));
     const dx = nx - cx;
@@ -397,21 +466,39 @@ export function resolveActorMovement(
       const dist = Math.sqrt(distSq);
       if (dist > 0.0001) {
         const push = radius - dist;
-        nx += (dx / dist) * push;
-        nz += (dz / dist) * push;
+        const pnx = dx / dist;
+        const pnz = dz / dist;
+        nx += pnx * push;
+        nz += pnz * push;
+        const vn = actor.vx * pnx + actor.vz * pnz;
+        if (vn < 0) {
+          actor.vx -= vn * pnx;
+          actor.vz -= vn * pnz;
+        }
       } else {
         const penX = Math.min(Math.abs(nx - b.minX), Math.abs(b.maxX - nx)) + radius;
         const penZ = Math.min(Math.abs(nz - b.minZ), Math.abs(b.maxZ - nz)) + radius;
         if (penX < penZ) {
           nx = nx < (b.minX + b.maxX) / 2 ? b.minX - radius : b.maxX + radius;
+          actor.vx = 0;
         } else {
           nz = nz < (b.minZ + b.maxZ) / 2 ? b.minZ - radius : b.maxZ + radius;
+          actor.vz = 0;
         }
       }
     }
   }
 
+  if (ny <= supportY) {
+    ny = supportY;
+    actor.vy = 0;
+    actor.grounded = true;
+  } else {
+    actor.grounded = false;
+  }
+
   actor.x = nx;
+  actor.y = ny;
   actor.z = nz;
 }
 
@@ -511,7 +598,6 @@ export function castBulletRay(
     }
   }
 
-  // Also check ground plane (y = 0)
   if (dy < -0.0001) {
     const tGround = -oy / dy;
     if (tGround > 0 && tGround < closestWall) {

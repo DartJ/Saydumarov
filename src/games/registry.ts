@@ -79,9 +79,9 @@ export const GAME_REGISTRY: GameManifest[] = [
   {
     id: 'city_driver',
     title: 'Мегаполис Drive 3D',
-    subtitle: 'Открытый 3D-город, дрифт и погони полиции',
+    subtitle: 'Открытый 3D-город 640×640 м, трафик и 3 вида миссий',
     description:
-      'Свободная езда по ночному прибрежному мегаполису: физика дрифта, выход из авто и перехват транспорта, контракты на время и звёзды розыска полиции.',
+      'Большой прибрежный мегаполис с небоскрёбами, парками, плотным трафиком, физикой дрифта, сменой авто, погонями полиции, спринтами и побегами с грузом.',
     category: 'action',
     categoryLabel: 'Экшн 3D',
     playersLabel: 'Соло · Открытый мир WebGL',
@@ -89,14 +89,14 @@ export const GAME_REGISTRY: GameManifest[] = [
     supportsAi: true,
     coverImage: '/src/assets/images/arcade_city_cover_1795688251657.jpg',
     accentColor: '#F59E0B',
-    controlsHint: 'WASD — движение · Space — дрифт · F — выйти/сесть в авто',
+    controlsHint: 'WASD — руль · Space — дрифт · F — авто · M — миссия',
   },
   {
     id: 'tactical_fps',
     title: 'Tactical Strike 3D',
-    subtitle: 'Тактический 3D-шутер 5×5 с закупкой и C4',
+    subtitle: 'Тактический 3D-шутер 5×5 с физикой и камерой CS2',
     description:
-      'Командный шутер от первого лица в духе классики: раунды CT против T, магазин оружия (AK-47, M4A1-S, AWP с оптикой), хедшоты и бомба C4 на точках A и B.',
+      'Командный шутер от первого лица: контр-стрейфы, запрыгивания на ящики, плавная камера с инерцией оружия, закупка AK-47 / M4A1-S / AWP и бомба C4.',
     category: 'action',
     categoryLabel: 'Экшн 3D',
     playersLabel: '5×5 с ботами · 1×5 Соло',
@@ -105,6 +105,21 @@ export const GAME_REGISTRY: GameManifest[] = [
     coverImage: '/src/assets/images/arcade_fps_cover_1795688251311.jpg',
     accentColor: '#38BDF8',
     controlsHint: 'Клик — прицел/огонь · B — магазин · R — перезаряд · E — C4',
+  },
+  {
+    id: 'color_block',
+    title: 'Color Block',
+    subtitle: 'Неоновая головоломка со сборкой линий и комбо',
+    description:
+      'Размещайте яркие фигуры на поле 8×8, очищайте целые строки и столбцы, копите серии комбо и ставьте новые рекорды без ограничений по времени.',
+    category: 'logic',
+    categoryLabel: 'Головоломка',
+    playersLabel: 'Соло · Бесконечный аркадный режим',
+    supportsOnline: false,
+    supportsAi: false,
+    coverImage: '/src/assets/images/arcade_colorblock_cover_1795691230843.jpg',
+    accentColor: '#A855F7',
+    controlsHint: 'Перетащите фигуру на поле или выберите блок и кликните по клетке',
   },
 ];
 

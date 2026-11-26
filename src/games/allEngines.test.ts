@@ -49,6 +49,11 @@ import {
   hasLineOfSight,
   resolveActorMovement,
 } from './tacticalfps/engine';
+import {
+  COLOR_GRID_SIZE,
+  applyColorBlockPlacement,
+  createInitialColorBlockState,
+} from './colorblock/engine';
 
 test('Chess: initial state has 20 legal moves and Fool Mate triggers checkmate', () => {
   let state = createInitialChessState();
@@ -267,4 +272,33 @@ test('TacticalFPS: map boxes block movement/sight, headshots deal lethal multipl
     resolveActorMovement(shooter, 0, -1, false, false, false, 0.05, map);
   }
   assert.ok(shooter.z >= -map.halfSize + 1.0);
+
+  // CS2 walkable crate: jumping above mid_step (maxY=0.8) lands cleanly on top of crate
+  const crateActor = createActor('jump_tester', 'Tester', 'ct', true, { x: -1.8, z: 9 });
+  crateActor.y = 1.1;
+  crateActor.vy = -1.0;
+  crateActor.grounded = false;
+  for (let i = 0; i < 10; i++) {
+    resolveActorMovement(crateActor, 0, 0, false, false, false, 0.05, map);
+  }
+  assert.ok(crateActor.y >= 0.79 && crateActor.grounded, `Expected landing on crate top, got y=${crateActor.y}`);
+});
+
+test('ColorBlock: creates 8x8 board, places shapes, and clears completed rows with combo points', () => {
+  let state = createInitialColorBlockState();
+  assert.equal(state.grid.length, COLOR_GRID_SIZE);
+  assert.equal(state.tray.length, 3);
+
+  // Fill first 7 columns of row 0 and set a 1x1 piece in tray[0]
+  for (let c = 0; c < 7; c++) {
+    state.grid[0][c] = 'cyan';
+  }
+  state.tray[0] = { id: 'dot_test', cells: [[0, 0]], color: 'amber', width: 1, height: 1 };
+
+  const res = applyColorBlockPlacement(state, 0, 0, 7);
+  assert.equal(res.placed, true);
+  assert.equal(res.clearedCount, 1);
+  assert.ok(res.pointsGained >= 130);
+  assert.equal(res.nextState.grid[0].every((c) => c === null), true);
+  assert.equal(res.nextState.linesCleared, 1);
 });

@@ -5,7 +5,8 @@ export type GameId =
   | 'checkers'
   | 'tictactoe'
   | 'city_driver'
-  | 'tactical_fps';
+  | 'tactical_fps'
+  | 'color_block';
 
 export type GameCategory = 'action' | 'strategy' | 'logic' | 'physics';
 
@@ -83,6 +84,12 @@ export interface TacticalFpsRecord {
   roundsWon: number;
 }
 
+export interface ColorBlockRecord {
+  bestScore: number;
+  totalLinesCleared: number;
+  bestCombo: number;
+}
+
 export interface GameRecords {
   chess: ChessRecord;
   minesweeper: MinesweeperRecord;
@@ -91,6 +98,7 @@ export interface GameRecords {
   tictactoe: TicTacToeRecord;
   cityDriver: CityDriverRecord;
   tacticalFps: TacticalFpsRecord;
+  colorBlock: ColorBlockRecord;
 }
 
 export interface SupabaseConfig {

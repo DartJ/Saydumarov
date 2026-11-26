@@ -182,10 +182,23 @@ function buildViewModelGroup(): {
   const bladeMat = new THREE.MeshStandardMaterial({ color: '#cbd5e1', roughness: 0.2, metalness: 0.92 });
   const gloveMat = new THREE.MeshStandardMaterial({ color: '#1c2026', roughness: 0.85 });
 
-  // Right tactical hand
-  const hand = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.18), gloveMat);
-  hand.position.set(0.2, -0.22, -0.32);
-  root.add(hand);
+  // Right & Left connected tactical forearms + gloved hands
+  const sleeveMat = new THREE.MeshStandardMaterial({ color: '#1b2838', roughness: 0.78 });
+  const rightSleeve = new THREE.Mesh(new THREE.BoxGeometry(0.078, 0.078, 0.28), sleeveMat);
+  rightSleeve.position.set(0.24, -0.25, -0.20);
+  rightSleeve.rotation.set(0.25, -0.18, 0);
+
+  const hand = new THREE.Mesh(new THREE.BoxGeometry(0.072, 0.07, 0.14), gloveMat);
+  hand.position.set(0.205, -0.205, -0.35);
+
+  const leftSleeve = new THREE.Mesh(new THREE.BoxGeometry(0.074, 0.074, 0.34), sleeveMat);
+  leftSleeve.position.set(0.02, -0.27, -0.32);
+  leftSleeve.rotation.set(0.22, -0.44, 0);
+
+  const supportHand = new THREE.Mesh(new THREE.BoxGeometry(0.068, 0.065, 0.13), gloveMat);
+  supportHand.position.set(0.165, -0.21, -0.46);
+  supportHand.rotation.y = -0.22;
+  root.add(rightSleeve, hand, leftSleeve, supportHand);
 
   // Knife
   const knife = new THREE.Group();
@@ -196,14 +209,21 @@ function buildViewModelGroup(): {
   knife.add(kHandle, kBlade);
   root.add(knife);
 
-  // USP-S
+  // USP-S with iron sights
   const usp = new THREE.Group();
-  const uspSlide = new THREE.Mesh(new THREE.BoxGeometry(0.042, 0.055, 0.24), darkSteel);
+  const uspSlide = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.052, 0.24), darkSteel);
   uspSlide.position.set(0.2, -0.16, -0.42);
+  const uspSightRear = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.012, 0.014), gunMetal);
+  uspSightRear.position.set(0.2, -0.13, -0.31);
+  const uspSightFront = new THREE.Mesh(
+    new THREE.BoxGeometry(0.01, 0.012, 0.012),
+    new THREE.MeshBasicMaterial({ color: '#4ade80' })
+  );
+  uspSightFront.position.set(0.2, -0.13, -0.52);
   const uspSilencer = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.18, 10), gunMetal);
   uspSilencer.rotation.x = Math.PI / 2;
   uspSilencer.position.set(0.2, -0.16, -0.62);
-  usp.add(uspSlide, uspSilencer);
+  usp.add(uspSlide, uspSightRear, uspSightFront, uspSilencer);
   root.add(usp);
 
   // AK-47
@@ -221,19 +241,23 @@ function buildViewModelGroup(): {
   ak47.add(akBody, akWood, akBarrel, akMag);
   root.add(ak47);
 
-  // M4A1-S
+  // M4A1-S with Picatinny Rail & Reflex Sight
   const m4a1 = new THREE.Group();
   const m4Body = new THREE.Mesh(new THREE.BoxGeometry(0.052, 0.085, 0.44), darkSteel);
   m4Body.position.set(0.21, -0.17, -0.45);
+  const m4Rail = new THREE.Mesh(new THREE.BoxGeometry(0.036, 0.018, 0.3), gunMetal);
+  m4Rail.position.set(0.21, -0.122, -0.46);
+  const m4Holo = new THREE.Mesh(new THREE.BoxGeometry(0.038, 0.035, 0.06), darkSteel);
+  m4Holo.position.set(0.21, -0.1, -0.44);
   const m4Suppressor = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.26, 10), gunMetal);
   m4Suppressor.rotation.x = Math.PI / 2;
   m4Suppressor.position.set(0.21, -0.155, -0.76);
   const m4Mag = new THREE.Mesh(new THREE.BoxGeometry(0.036, 0.14, 0.06), darkSteel);
   m4Mag.position.set(0.21, -0.26, -0.46);
-  m4a1.add(m4Body, m4Suppressor, m4Mag);
+  m4a1.add(m4Body, m4Rail, m4Holo, m4Suppressor, m4Mag);
   root.add(m4a1);
 
-  // AWP
+  // AWP with Scope Lens
   const awp = new THREE.Group();
   const awpStock = new THREE.Mesh(new THREE.BoxGeometry(0.056, 0.08, 0.56), oliveMat);
   awpStock.position.set(0.21, -0.18, -0.46);
@@ -243,7 +267,12 @@ function buildViewModelGroup(): {
   const awpScope = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.24, 10), darkSteel);
   awpScope.rotation.x = Math.PI / 2;
   awpScope.position.set(0.21, -0.1, -0.48);
-  awp.add(awpStock, awpBarrel, awpScope);
+  const awpLens = new THREE.Mesh(
+    new THREE.CircleGeometry(0.02, 10),
+    new THREE.MeshBasicMaterial({ color: '#38bdf8' })
+  );
+  awpLens.position.set(0.21, -0.1, -0.358);
+  awp.add(awpStock, awpBarrel, awpScope, awpLens);
   root.add(awp);
 
   const muzzleFlash = new THREE.Mesh(
@@ -360,6 +389,12 @@ export const TacticalFpsGame: React.FC<TacticalFpsGameProps> = ({ onRecordUpdate
     let damageFlash = 0;
     let muzzleFlashTimer = 0;
     let viewRecoil = 0;
+    let punchPitch = 0;
+    let swayX = 0;
+    let swayY = 0;
+    let camRoll = 0;
+    let landDip = 0;
+    let wasGrounded = true;
     let roundBanner: string | null = null;
     let killIdSeq = 1;
     const killFeed: KillFeedItem[] = [];
@@ -543,6 +578,22 @@ export const TacticalFpsGame: React.FC<TacticalFpsGameProps> = ({ onRecordUpdate
       scene.add(mesh);
     }
 
+    // Tactical steel barrels around A & B sites for CS2 depth
+    const barrelGeo = new THREE.CylinderGeometry(0.42, 0.42, 1.12, 12);
+    const barrelMat = new THREE.MeshStandardMaterial({ color: '#2b4c6f', roughness: 0.45, metalness: 0.6 });
+    for (const [bx, bz] of [
+      [23.2, -16.5],
+      [24.1, -15.9],
+      [-23.5, -18.5],
+      [-12.2, 6.2],
+      [12.2, -6.2],
+    ]) {
+      const barrel = new THREE.Mesh(barrelGeo, barrelMat);
+      barrel.position.set(bx, 0.56, bz);
+      barrel.receiveShadow = true;
+      scene.add(barrel);
+    }
+
     // Planted C4 Mesh
     const c4Group = new THREE.Group();
     const c4Body = new THREE.Mesh(
@@ -663,6 +714,8 @@ export const TacticalFpsGame: React.FC<TacticalFpsGameProps> = ({ onRecordUpdate
           -1.42,
           Math.min(1.42, player.pitch - e.movementY * sens)
         );
+        swayX = Math.max(-0.04, Math.min(0.04, swayX - e.movementX * 0.0005));
+        swayY = Math.max(-0.04, Math.min(0.04, swayY + e.movementY * 0.0005));
       } else if (dragAimRef.current.active) {
         const dx = e.clientX - dragAimRef.current.lastX;
         const dy = e.clientY - dragAimRef.current.lastY;
@@ -671,6 +724,8 @@ export const TacticalFpsGame: React.FC<TacticalFpsGameProps> = ({ onRecordUpdate
         if (Math.abs(dx) > 120 || Math.abs(dy) > 120) return;
         player.yaw -= dx * 0.0045;
         player.pitch = Math.max(-1.42, Math.min(1.42, player.pitch - dy * 0.0045));
+        swayX = Math.max(-0.04, Math.min(0.04, swayX - dx * 0.0008));
+        swayY = Math.max(-0.04, Math.min(0.04, swayY + dy * 0.0008));
       }
     };
 
@@ -740,14 +795,16 @@ export const TacticalFpsGame: React.FC<TacticalFpsGameProps> = ({ onRecordUpdate
       if (shooter.isPlayer) {
         soundFX.gunshot(shooter.weaponId);
         muzzleFlashTimer = spec.id === 'knife' ? 0 : 0.055;
-        viewRecoil = Math.min(0.14, viewRecoil + spec.recoilKick * 1.4);
+        viewRecoil = Math.min(0.15, viewRecoil + spec.recoilKick * 1.45);
+        punchPitch = Math.min(0.11, punchPitch + spec.recoilKick * 0.95);
       }
 
-      // Compute spread
+      // CS2 speed-based spread (counter-strafing to ~0 velocity gives pinpoint accuracy!)
+      const horizSpeed = Math.hypot(shooter.vx, shooter.vz);
+      const speedNorm = Math.min(1.25, horizSpeed / Math.max(1, spec.moveSpeed));
+      const airPenalty = shooter.grounded ? 0 : 0.065;
       const moveFactor = shooter.isPlayer
-        ? (keysRef.current['KeyW'] || keysRef.current['KeyA'] || keysRef.current['KeyS'] || keysRef.current['KeyD']
-            ? spec.moveSpread
-            : 0) * (shooter.crouching ? 0.5 : 1)
+        ? (speedNorm > 0.16 ? spec.moveSpread * speedNorm : 0) * (shooter.crouching ? 0.45 : 1) + airPenalty
         : 0.025;
       const totalSpread = spec.baseSpread + shooter.recoilBloom + moveFactor;
       const sx = (Math.random() - 0.5) * 2 * totalSpread;
@@ -761,7 +818,7 @@ export const TacticalFpsGame: React.FC<TacticalFpsGameProps> = ({ onRecordUpdate
 
       shooter.recoilBloom = Math.min(0.09, shooter.recoilBloom + spec.recoilKick);
 
-      const eyeY = shooter.y + (shooter.crouching ? 1.12 : 1.56);
+      const eyeY = shooter.y + (1.58 - shooter.crouchFrac * 0.45);
       const hit = castBulletRay(
         shooter,
         shooter.x,
@@ -845,6 +902,12 @@ export const TacticalFpsGame: React.FC<TacticalFpsGameProps> = ({ onRecordUpdate
     let cancelFrame = () => {};
     let lastTime = performance.now();
     let lastHudEmit = 0;
+
+    camera.position.set(player.x, 1.58, player.z);
+    camera.rotation.order = 'YXZ';
+    camera.rotation.y = player.yaw;
+    camera.rotation.x = player.pitch;
+    renderer.render(scene, camera);
 
     const tick = () => {
       if (disposed) return;
@@ -939,11 +1002,15 @@ export const TacticalFpsGame: React.FC<TacticalFpsGameProps> = ({ onRecordUpdate
         }
       }
 
-      // Decay timers
+      // Decay timers & CS2 camera spring recovery
       if (hitmarkerTimer > 0) hitmarkerTimer -= dt;
       if (damageFlash > 0) damageFlash = Math.max(0, damageFlash - dt * 1.4);
       if (muzzleFlashTimer > 0) muzzleFlashTimer -= dt;
-      viewRecoil = Math.max(0, viewRecoil - dt * 0.42);
+      viewRecoil = Math.max(0, viewRecoil - dt * 0.45);
+      punchPitch *= Math.exp(-12 * dt);
+      swayX *= Math.exp(-10 * dt);
+      swayY *= Math.exp(-10 * dt);
+      landDip *= Math.exp(-11 * dt);
 
       // Update tracers
       for (let i = tracers.length - 1; i >= 0; i--) {
@@ -1173,20 +1240,31 @@ export const TacticalFpsGame: React.FC<TacticalFpsGameProps> = ({ onRecordUpdate
         }
       }
 
-      // Sync Camera & ViewModel
+          // Detect landing impact for CS2 camera dip
+          if (!wasGrounded && player.grounded) {
+            landDip = -0.14;
+          }
+          wasGrounded = player.grounded;
+
+      // Sync Camera & ViewModel (CS2 smooth crouch, strafe roll, sway, recoil punch)
       if (player.alive) {
-        const eyeY = player.y + (player.crouching ? 1.15 : 1.58);
+        const eyeY = player.y + (1.58 - player.crouchFrac * 0.45) + landDip;
         camera.position.set(player.x, eyeY, player.z);
         camera.rotation.order = 'YXZ';
         camera.rotation.y = player.yaw;
-        camera.rotation.x = player.pitch + viewRecoil * 0.35;
+        camera.rotation.x = player.pitch + punchPitch;
+        const strafeSign = (k['KeyA'] ? 1 : 0) - (k['KeyD'] ? 1 : 0);
+        const speedFrac = Math.min(1, Math.hypot(player.vx, player.vz) / 6.5);
+        const targetRoll = strafeSign * speedFrac * 0.018;
+        camRoll += (targetRoll - camRoll) * Math.min(1, dt * 12);
+        camera.rotation.z = camRoll;
       } else {
-        // Spectator orbit when eliminated
         camera.position.set(player.x, 4.2, player.z + 5.5);
         camera.lookAt(player.x, 1.0, player.z);
+        camera.rotation.z = 0;
       }
 
-      const targetFov = scoped ? 22 : 72;
+      const targetFov = scoped ? 22 : 74;
       if (Math.abs(camera.fov - targetFov) > 0.3) {
         camera.fov = targetFov;
         camera.updateProjectionMatrix();
@@ -1196,10 +1274,16 @@ export const TacticalFpsGame: React.FC<TacticalFpsGameProps> = ({ onRecordUpdate
       (Object.keys(viewModel.weapons) as WeaponId[]).forEach((wid) => {
         viewModel.weapons[wid].visible = wid === player.weaponId;
       });
-      const bob = Math.sin(player.walkCycle) * 0.012;
-      const reloadDip = player.reloadingLeft > 0 ? -0.14 : 0;
-      viewModel.root.position.set(bob * 0.7, Math.abs(bob) * 0.4 + reloadDip, viewRecoil * 0.45);
-      viewModel.root.rotation.x = viewRecoil * 0.7 - (player.reloadingLeft > 0 ? 0.35 : 0);
+      const speedWalk = Math.min(1, Math.hypot(player.vx, player.vz) / 6.5);
+      const bob = Math.sin(player.walkCycle) * 0.012 * speedWalk;
+      const reloadDip = player.reloadingLeft > 0 ? -0.15 : 0;
+      viewModel.root.position.set(
+        bob * 0.8 + swayX,
+        Math.abs(bob) * 0.45 + reloadDip + swayY + landDip * 0.35,
+        viewRecoil * 0.45
+      );
+      viewModel.root.rotation.x = viewRecoil * 0.72 - (player.reloadingLeft > 0 ? 0.36 : 0);
+      viewModel.root.rotation.y = swayX * 1.4;
       viewModel.muzzleFlash.visible = muzzleFlashTimer > 0;
 
       // Sync Soldier Meshes
@@ -1262,7 +1346,12 @@ export const TacticalFpsGame: React.FC<TacticalFpsGameProps> = ({ onRecordUpdate
           buyMenuOpen,
           scoreboardOpen,
           pointerLocked: document.pointerLockElement === canvas,
-          crosshairSpread: Math.round(6 + player.recoilBloom * 220),
+          crosshairSpread: Math.round(
+            4 +
+              player.recoilBloom * 220 +
+              (Math.hypot(player.vx, player.vz) > 1.0 ? Math.hypot(player.vx, player.vz) * 1.4 : 0) +
+              (player.grounded ? 0 : 10)
+          ),
           hitmarkerActive: hitmarkerTimer > 0,
           damageFlash,
           roundBanner,

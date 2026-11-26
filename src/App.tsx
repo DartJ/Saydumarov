@@ -32,6 +32,7 @@ import { CheckersGame } from './components/games/CheckersGame';
 import { TicTacToeGame } from './components/games/TicTacToeGame';
 import { CityDriverGame } from './components/games/CityDriverGame';
 import { TacticalFpsGame } from './components/games/TacticalFpsGame';
+import { ColorBlockGame } from './components/games/ColorBlockGame';
 import { OnlineLobby } from './components/OnlineLobby';
 import { RecordsView } from './components/RecordsView';
 import { SettingsView } from './components/SettingsView';
@@ -352,6 +353,22 @@ export default function App() {
               }
             />
           )}
+
+          {activeGame === 'color_block' && (
+            <ColorBlockGame
+              bestScore={records.colorBlock.bestScore}
+              onRecordUpdate={(stats) =>
+                updateRecords((prev) => ({
+                  ...prev,
+                  colorBlock: {
+                    bestScore: Math.max(prev.colorBlock.bestScore, stats.score),
+                    totalLinesCleared: prev.colorBlock.totalLinesCleared + stats.linesDelta,
+                    bestCombo: Math.max(prev.colorBlock.bestCombo, stats.bestCombo),
+                  },
+                }))
+              }
+            />
+          )}
         </main>
       </div>
     );
@@ -365,16 +382,21 @@ export default function App() {
       {/* 3-Zone Contract Top Bar */}
       <header className="sticky top-0 z-30 bg-[#090B10]/95 border-b border-white/8 px-4 sm:px-8 py-3.5">
         <div className="max-w-6xl mx-auto flex items-center justify-between gap-8">
-          {/* Zone 1: Single Wordmark */}
+          {/* Zone 1: Brand Wordmark + Author Project Signature */}
           <button
             type="button"
             onClick={() => {
               soundFX.click();
               setActiveTab('hall');
             }}
-            className="font-display text-lg font-bold tracking-wider text-white whitespace-nowrap shrink-0 focus:outline-none"
+            className="flex items-baseline gap-2.5 whitespace-nowrap shrink-0 focus:outline-none"
           >
-            ARCADE
+            <span className="font-display text-lg font-bold tracking-wider text-white">
+              ARCADE
+            </span>
+            <span className="text-[11px] font-semibold text-cyan-400 tracking-wide">
+              Saydumarov J project
+            </span>
           </button>
 
           {/* Zone 2: Clean Single-Line Text Navigation */}
@@ -449,19 +471,19 @@ export default function App() {
               <div className="p-6 sm:p-9 flex flex-col justify-between gap-6">
                 <div className="flex flex-col gap-3">
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-400">
-                    <span className={`${accent.text} whitespace-nowrap`}>Без регистрации</span>
+                    <span className={`${accent.text} font-semibold whitespace-nowrap`}>Saydumarov J project</span>
+                    <span aria-hidden="true">·</span>
+                    <span className="whitespace-nowrap">Без регистрации</span>
                     <span aria-hidden="true">·</span>
                     <span className="whitespace-nowrap">Мгновенный запуск</span>
-                    <span aria-hidden="true">·</span>
-                    <span className="whitespace-nowrap">ИИ и онлайн-дуэли</span>
                   </div>
                   <h1 className="font-display text-2xl sm:text-4xl font-bold text-white leading-tight [text-wrap:balance]">
                     Игровой зал ARCADE
                   </h1>
                   <p className="text-sm sm:text-base text-slate-300 leading-relaxed max-w-xl">
                     Полноценные браузерные игры без паролей и очередей: 3D-экшн в открытом
-                    городе, тактический шутер 5×5, турнирные шахматы, бильярд 8-Ball,
-                    сапёр, русские шашки и сетевые комнаты по коду.
+                    городе, тактический шутер CS2-формата, Color Block, турнирные шахматы,
+                    бильярд 8-Ball, сапёр, русские шашки и сетевые комнаты.
                   </p>
                 </div>
 
@@ -639,7 +661,7 @@ export default function App() {
 
       <footer className="border-t border-white/6 px-4 sm:px-8 py-5 text-xs text-slate-500">
         <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3">
-          <span>ARCADE — браузерная игровая платформа без регистрации</span>
+          <span>ARCADE · <strong className="text-slate-300 font-semibold">Saydumarov J project</strong> — браузерная игровая платформа без регистрации</span>
           <span>Рекорды и настройки сохраняются локально · Онлайн через Supabase</span>
         </div>
       </footer>
